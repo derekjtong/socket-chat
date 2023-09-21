@@ -16,11 +16,19 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((host, port))
 
 # Prompt the user for a username.
-name = input("Username: ").strip()
+name = ""
+while name == "":
+    name = input("Username: ").strip()
+
+client_socket.sendall(f"/username {name}".encode())
+server_reply = client_socket.recv(1024).decode()
+print(server_reply)
+server_reply = client_socket.recv(1024).decode()
+print(server_reply)
 
 # Continuously prompt the user to enter messages to send to the server.
 while True:
-    message = input(f"{name}: ").strip()
+    message = input("SOCKETCHAT: ").strip()
 
     # If the user doesn't enter a message, skip to the next iteration.
     if not message:
@@ -30,7 +38,7 @@ while True:
     client_socket.sendall(message.encode())
 
     # If the user enters "exit", log the exit message and break the loop.
-    if message == "exit":
+    if message == "/exit":
         print("Exiting...")
         break
 
