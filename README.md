@@ -16,3 +16,11 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
       and the client with the ID listed in the command.
    4. **exit**: The server should send back a message "Goodbye" and close the connection.
       Grading Rubric
+
+## Usage
+
+1. Start server:
+`python3 server.py <host> <port>`
+
+2. Start client:
+`python3 client.py <host> <port>`
