@@ -63,7 +63,6 @@ class ClientHandler:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
                     )
-
         self.link.close()
 
     def handle_command(self, command):
