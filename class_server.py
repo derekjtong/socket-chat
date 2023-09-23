@@ -12,6 +12,7 @@ CMD_HELP = "/help"
 CMD_TARGET = "/target"
 
 connected_clients = set()
+connected_clients_lock = threading.Lock()
 
 
 class ClientHandler:
@@ -42,14 +43,18 @@ class ClientHandler:
         self.send(f"{self.thread_name} Server: Your UUID is {self.client_uuid}")
         while True:
             client_data = self.link.recv(1024).decode()
+            global connected_clients
             if not client_data:
-                print("empty")
+                print("Disconnected unexpectedly")
+                with connected_clients_lock:
+                    connected_clients.remove(self.client_uuid)
                 break
             if client_data[0] == "/":
                 if self.handle_command(client_data) is False:
                     print(f"{self.thread_name}: Client {self.client_address} exited")
-                    global connected_clients
-                    connected_clients.remove(self.client_uuid)
+                    # When removing a client:
+                    with connected_clients_lock:
+                        connected_clients.remove(self.client_uuid)
                     break
             else:
                 print(
@@ -139,7 +144,10 @@ def main():
     while True:
         conn, address = sk.accept()
         client_uuid = uuid.uuid4()
-        connected_clients.add(client_uuid)
+
+        # lock thread
+        with connected_clients_lock:
+            connected_clients.add(client_uuid)
         client_handler = ClientHandler(conn, address, client_uuid)
         t = threading.Thread(target=client_handler.run)
         t.start()
