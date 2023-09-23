@@ -48,6 +48,8 @@ class ClientHandler:
             if client_data[0] == "/":
                 if self.handle_command(client_data) is False:
                     print(f"{self.thread_name}: Client {self.client_address} exited")
+                    global connected_clients
+                    connected_clients.remove(self.client_uuid)
                     break
             else:
                 print(
@@ -84,7 +86,7 @@ class ClientHandler:
         values = "\nActive Clients:\n"
         for value in connected_clients:
             values += str(value)
-            if(value == self.client_uuid):
+            if value == self.client_uuid:
                 values += " (self)"
             values += "\n"
         self.send(values)
