@@ -43,8 +43,7 @@ while True:
         break
 
     # Receive and print the server's reply.
-    server_reply = client_socket.recv(1024).decode()
-    print(server_reply)
+    print(client_socket.recv(1024).decode())
 
 # Close the client socket after communication ends.
 client_socket.close()
