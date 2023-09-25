@@ -50,10 +50,11 @@ def main():
     client_receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     receiver_port = int(client_sender_socket.recv(1024).decode())
-    print("port", receiver_port)
+    print("Assigned port:", receiver_port)
+
     # TODO: check if valid, else end program
     client_receiver_socket.connect((host, int(receiver_port)))
-    print("connected")
+    print("Connected")
 
     # Prompt the user for a username.
     name = ""
@@ -62,14 +63,14 @@ def main():
 
     # TODO: break the sender and receiver into separate threads
     client_sender_socket.sendall(f"/username {name}".encode())
-    server_reply = client_sender_socket.recv(1024).decode()
+    server_reply = client_receiver_socket.recv(1024).decode()
     print(server_reply)
-    server_reply = client_sender_socket.recv(1024).decode()
+    server_reply = client_receiver_socket.recv(1024).decode()
     print(server_reply)
 
+    # Set up send and receive threads
     send = send_handler(client_sender_socket)
-    recv = recv_handler()
-
+    recv = recv_handler(client_receiver_socket)
     send = threading.Thread(target=send_handler.run)
     recv = threading.Thread(target=recv_handler.run)
 

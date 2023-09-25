@@ -15,6 +15,7 @@ CMD_TARGET = "/target"
 connected_clients = set()
 connected_clients_lock = threading.Lock()
 
+
 class ClientHandler:
     def __init__(self, conn_recv, addr_recv, conn_send, addr_send, client_uuid):
         self.conn_recv = conn_recv
@@ -145,6 +146,7 @@ def main():
         conn_recv, addr_recv = socket_in.accept()
         client_uuid = uuid.uuid4()
 
+        # Set up outbound socket
         socket_out = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_out.bind((host, 0))
         socket_out.listen()
