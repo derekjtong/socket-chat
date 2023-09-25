@@ -11,9 +11,9 @@ CMD_USERNAME = "/username"
 CMD_HELP = "/help"
 CMD_TARGET = "/target"
 
+# TODO: Instead of using global variable, create a Server class and pass the object to each thread.
 connected_clients = set()
 connected_clients_lock = threading.Lock()
-
 
 class ClientHandler:
     def __init__(self, conn_recv, addr_recv, conn_send, addr_send, client_uuid):
