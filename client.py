@@ -10,20 +10,30 @@ if len(sys.argv) != 3:
 host, port = sys.argv[1], int(sys.argv[2])
 
 # Create a new socket for the client.
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connect the client socket to the specified server's host and port.
-client_socket.connect((host, port))
+client_sender_socket.connect((host, port))
+
+client_receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+receiver_port = int(client_sender_socket.recv(1024).decode())
+print("port", receiver_port)
+# TODO: check if valid, else end program
+client_receiver_socket.connect((host, int(receiver_port)))
+print("connected")
 
 # Prompt the user for a username.
 name = ""
 while name == "":
     name = input("Username: ").strip()
 
-client_socket.sendall(f"/username {name}".encode())
-server_reply = client_socket.recv(1024).decode()
+
+# TODO: break the sender and receiver into separate threads
+client_sender_socket.sendall(f"/username {name}".encode())
+server_reply = client_sender_socket.recv(1024).decode()
 print(server_reply)
-server_reply = client_socket.recv(1024).decode()
+server_reply = client_sender_socket.recv(1024).decode()
 print(server_reply)
 
 # Continuously prompt the user to enter messages to send to the server.
@@ -35,7 +45,7 @@ while True:
         continue
 
     # Send the user's message to the server.
-    client_socket.sendall(message.encode())
+    client_sender_socket.sendall(message.encode())
 
     # If the user enters "exit", log the exit message and break the loop.
     if message == "/exit":
@@ -43,7 +53,7 @@ while True:
         break
 
     # Receive and print the server's reply.
-    print(client_socket.recv(1024).decode())
+    print(client_sender_socket.recv(1024).decode())
 
 # Close the client socket after communication ends.
-client_socket.close()
+client_sender_socket.close()

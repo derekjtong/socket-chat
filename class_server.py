@@ -16,9 +16,11 @@ connected_clients_lock = threading.Lock()
 
 
 class ClientHandler:
-    def __init__(self, link, client_address, client_uuid):
-        self.link = link
-        self.client_address = client_address
+    def __init__(self, conn_recv, addr_recv, conn_send, addr_send, client_uuid):
+        self.conn_recv = conn_recv
+        self.addr_recv = addr_recv
+        self.conn_send = conn_send
+        self.addr_send = addr_send
         self.client_uuid = client_uuid
         self.client_name = ""
         self.thread_name = f"[{threading.get_native_id()}]"
@@ -34,15 +36,15 @@ class ClientHandler:
         }
 
     def send(self, message):
-        self.link.sendall(message.encode())
+        self.conn_send.sendall(message.encode())
 
     def run(self):
         print(
-            f"[SERVER]: New connection from {self.client_address}, created new thread {self.thread_name}"
+            f"[SERVER]: New connection from {self.addr_recv}, created new thread {self.thread_name}"
         )
         self.send(f"{self.thread_name} Server: Your UUID is {self.client_uuid}")
         while True:
-            client_data = self.link.recv(1024).decode()
+            client_data = self.conn_recv.recv(1024).decode()
             global connected_clients
             if not client_data:
                 print("Disconnected unexpectedly")
@@ -51,14 +53,13 @@ class ClientHandler:
                 break
             if client_data[0] == "/":
                 if self.handle_command(client_data) is False:
-                    print(f"{self.thread_name}: Client {self.client_address} exited")
-                    # When removing a client:
+                    print(f"{self.thread_name}: Client {self.addr_recv} exited")
                     with connected_clients_lock:
                         connected_clients.remove(self.client_uuid)
                     break
             else:
                 print(
-                    f"{self.thread_name}: Client {self.client_address} sent message: {client_data}"
+                    f"{self.thread_name}: Client {self.addr_recv} sent message: {client_data}"
                 )
                 if self.target_id == -1:
                     self.send(
@@ -68,12 +69,11 @@ class ClientHandler:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
                     )
-        self.link.close()
+        self.conn_recv.close()
+        self.conn_send.close()
 
     def handle_command(self, command):
-        print(
-            f"{self.thread_name}: Client {self.client_address} used command {command}"
-        )
+        print(f"{self.thread_name}: Client {self.addr_recv} used command {command}")
 
         for cmd, handler in self.command_handlers.items():
             if command.startswith(cmd):
@@ -135,20 +135,27 @@ def main():
 
     host, port = sys.argv[1], int(sys.argv[2])
 
-    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sk.bind((host, port))
-    sk.listen()
+    socket_in = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_in.bind((host, port))
+    socket_in.listen()
 
     print(f"[SERVER]: Started listening on [{host}:{port}], awaiting clients...")
 
     while True:
-        conn, address = sk.accept()
+        conn_recv, addr_recv = socket_in.accept()
         client_uuid = uuid.uuid4()
 
-        # lock thread
+        socket_out = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_out.bind((host, 0))
+        socket_out.listen()
+        conn_recv.sendall(str(socket_out.getsockname()[1]).encode())
+        conn_send, addr_send = socket_out.accept()
+
         with connected_clients_lock:
             connected_clients.add(client_uuid)
-        client_handler = ClientHandler(conn, address, client_uuid)
+        client_handler = ClientHandler(
+            conn_recv, addr_recv, conn_send, addr_send, client_uuid
+        )
         t = threading.Thread(target=client_handler.run)
         t.start()
 
