@@ -104,13 +104,26 @@ class ClientHandler:
 
     def cmd_target(self, command):
         global connected_clients
-        self.target_id = uuid.UUID(self.get_args(command))
-        if self.target_id == self.client_uuid:
-            self.send(f"Error: cannot target self")
-        elif self.target_id in connected_clients:
-            self.send(f"Connected to {self.target_id}")
-        else:
+        args = self.get_args(command)
+        if not args:
+            if self.target_id == -1:
+                self.send("No target selected")
+            else:
+                self.send(f"Current target: {self.target_id}")
+            return
+        try:
+            self.target_id = uuid.UUID(args)
+        except ValueError:
             self.send(f"Error: target not found. To see connected clients, try /list")
+        else:
+            if self.target_id == self.client_uuid:
+                self.send(f"Error: cannot target self")
+            elif self.target_id in connected_clients:
+                self.send(f"Connected to {self.target_id}")
+            else:
+                self.send(
+                    f"Error: target not found. To see connected clients, try /list"
+                )
 
     def cmd_help(self, command):
         help_message = """
@@ -125,8 +138,11 @@ class ClientHandler:
         self.send(f"{self.thread_name} Server: {help_message}")
 
     def get_args(self, command):
-        _, arg = command.split(maxsplit=1)
-        return arg
+        parts = command.split(maxsplit=1)
+        if len(parts) == 2:
+            return parts[1]
+        else:
+            return False
 
 
 def main():
