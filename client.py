@@ -8,14 +8,15 @@ message_received_event = threading.Event()
 def send_handler(client_sender_socket):
     # Continuously prompt the user to enter messages to send to the server.
     while True:
+        # Needed or else user prompt "SOCKETCHAT:" prints on same line as server reply
         message_received_event.wait()
         message_received_event.clear()
 
-        print("SOCKETCHAT: ", end="")
-        message = input().strip()
+        message = input("SOCKETCHAT: ").strip()
 
         # If the user doesn't enter a message, skip to the next iteration.
         if not message:
+            message_received_event.set()
             continue
 
         # Send the user's message to the server.
