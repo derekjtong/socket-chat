@@ -2,11 +2,17 @@ import sys
 import socket
 import threading
 
+message_received_event = threading.Event()
+
 
 def send_handler(client_sender_socket):
     # Continuously prompt the user to enter messages to send to the server.
     while True:
-        message = input("SOCKETCHAT: ").strip()
+        message_received_event.wait()
+        message_received_event.clear()
+
+        print("SOCKETCHAT: ", end="")
+        message = input().strip()
 
         # If the user doesn't enter a message, skip to the next iteration.
         if not message:
@@ -29,7 +35,11 @@ def send_handler(client_sender_socket):
 
 def recv_handler(client_receiver_socket):
     while True:
-        print(client_receiver_socket.recv(1024).decode())
+        server_reply = client_receiver_socket.recv(1024).decode()
+        if not server_reply:
+            break
+        print(server_reply)
+        message_received_event.set()
 
 
 def main():
@@ -69,10 +79,14 @@ def main():
     print(server_reply)
 
     # Set up send and receive threads
-    send = send_handler(client_sender_socket)
-    recv = recv_handler(client_receiver_socket)
-    send = threading.Thread(target=send_handler.run)
-    recv = threading.Thread(target=recv_handler.run)
+    message_received_event.set()
+    send_thread = threading.Thread(target=send_handler, args=(client_sender_socket,))
+    recv_thread = threading.Thread(target=recv_handler, args=(client_receiver_socket,))
+    send_thread.start()
+    recv_thread.start()
+
+    send_thread.join()
+    recv_thread.join()
 
 
 if __name__ == "__main__":
