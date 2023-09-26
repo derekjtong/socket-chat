@@ -71,7 +71,6 @@ def main():
     while name == "":
         name = input("Username: ").strip()
 
-    # TODO: break the sender and receiver into separate threads
     client_sender_socket.sendall(f"/username {name}".encode())
     server_reply = client_receiver_socket.recv(1024).decode()
     print(server_reply)
@@ -81,12 +80,10 @@ def main():
     # Set up send and receive threads
     message_received_event.set()
     send_thread = threading.Thread(target=send_handler, args=(client_sender_socket,))
-    recv_thread = threading.Thread(target=recv_handler, args=(client_receiver_socket,))
     send_thread.start()
-    recv_thread.start()
 
+    recv_handler(client_receiver_socket)
     send_thread.join()
-    recv_thread.join()
 
 
 if __name__ == "__main__":
