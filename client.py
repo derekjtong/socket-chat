@@ -2,94 +2,139 @@ import sys
 import socket
 import threading
 
+MESSAGE_BUFFER_SIZE = 1024
+SOCKET_SETUP = (socket.AF_INET, socket.SOCK_STREAM)
+
+# Event to synchronize receiving of messages before prompting for the next input.
 message_received_event = threading.Event()
+
+# Event to signal when the user has chosen to exit, used to gracefully exit the receive handler.
 user_exited_event = threading.Event()
 
 
 def send_handler(client_sender_socket):
+    """
+    Continuously prompt the user for input and send messages to the server.
+
+    This function runs in a loop, waiting for user input and sending the input
+    as a message to the server over the provided socket. It ensures proper
+    synchronization with the recv_handler, waiting for the message_received_event
+    before prompting the user for the next message. The loop continues until the user
+    types "/exit", signaling a desire to end the conversation.
+
+    Parameters:
+    - client_sender_socket: The socket object used to send data to the server.
+
+    Returns:
+    None
+    """
     while True:
-        # Needed or else user prompt "SOCKETCHAT:" prints on same line as server reply
+        # Wait for the message_received_event before prompting the user for input,
+        # to ensure proper synchronization with recv_handler.
         message_received_event.wait()
         message_received_event.clear()
 
+        # Prompt the user for input.
         message = input("SOCKETCHAT: ").strip()
 
-        # If the user doesn't enter a message, skip to the next iteration.
+        # If the user doesn't enter a message, set the message_received_event
+        # and continue to the next iteration as there will be no server reply for an empty message.
         if not message:
-            # Must set event because server will not reply
             message_received_event.set()
             continue
 
         # Send the user's message to the server.
         client_sender_socket.sendall(message.encode())
 
-        # If the user enters "exit", log the exit message and break the loop.
+        # If the user enters "exit", log the exit message, set the user_exited_event,
+        # and break the loop to end the conversation.
         if message == "/exit":
             print("Exiting...")
             user_exited_event.set()
             break
 
-    client_sender_socket.close()
-
 
 def recv_handler(client_receiver_socket):
+    """
+    Continuously receive and print messages from the server.
+
+    This function listens for incoming messages from the server
+    and prints them to the console. It runs in a loop until
+    the user_exited_event is set, signaling that the user has exited,
+    or until the server closes the connection.
+
+    Parameters:
+    - client_receiver_socket: The socket object used to receive data
+        from the server.
+
+    Returns:
+    None
+    """
     while True:
+        # Exit the thread gracefully if user has exited.
         if user_exited_event.is_set():
             break
-        server_reply = client_receiver_socket.recv(1024).decode()
+
+        # Receive messages from the server and decode them.
+        server_reply = client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode()
+
+        # Break the loop and exit the thread if the server closed the connection.
         if not server_reply:
             break
+
+        # Print received messages to the console.
         print(server_reply)
+
+        # Set the event to signal that a message has been received and printed.
         message_received_event.set()
 
 
 def main():
+    """
+    Entry point for the client program. Initializes sockets, prompts user for
+    a username, sets up threads for handling sending and receiving messages.
+    """
+
+    # Validate the number of command-line arguments.
     if len(sys.argv) != 3:
         print(f"Usage: {sys.argv[0]} <host> <port>")
         sys.exit(1)
 
-    # Extract the host and port from the command-line arguments.
+    # Extract host and port from command-line arguments.
     host, port = sys.argv[1], int(sys.argv[2])
 
-    # New socket for outgoing messages.
-    client_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Initialize and connect the sender socket.
+    with socket.socket(*SOCKET_SETUP) as client_sender_socket:
+        client_sender_socket.connect((host, port))
 
-    # Connect the client socket to the specified server's host and port.
-    client_sender_socket.connect((host, port))
+        # Initialize the receiver socket and connect it to the port assigned by the server.
+        with socket.socket(*SOCKET_SETUP) as client_receiver_socket:
+            receiver_port = int(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
+            client_receiver_socket.connect((host, int(receiver_port)))
 
-    # New socket for incoming messages.
-    client_receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Prompt the user for a non-empty username.
+            while True:
+                name = input("Username: ").strip()
+                if name:
+                    break
+            client_sender_socket.sendall(f"/username {name}".encode())
 
-    # Receive port assigned by server
-    receiver_port = int(client_sender_socket.recv(1024).decode())
+            # Print the server replies, including the assigned UUID and greeting message.
+            print(client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode())
+            print(client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode())
 
-    # Connect to port assigned by server.
-    client_receiver_socket.connect((host, int(receiver_port)))
+            # Set up and start the sender thread.
+            message_received_event.set()
+            send_thread = threading.Thread(
+                target=send_handler, args=(client_sender_socket,)
+            )
+            send_thread.start()
 
-    # Prompt the user for a username.
-    name = ""
-    while name == "":
-        name = input("Username: ").strip()
-    client_sender_socket.sendall(f"/username {name}".encode())
+            # Use the main thread as the receiver thread.
+            recv_handler(client_receiver_socket)
 
-    # Receive UUID
-    server_reply = client_receiver_socket.recv(1024).decode()
-    print(server_reply)
-
-    # Hello {username}
-    server_reply = client_receiver_socket.recv(1024).decode()
-    print(server_reply)
-
-    # Set up send and receive threads
-    message_received_event.set()
-    send_thread = threading.Thread(target=send_handler, args=(client_sender_socket,))
-    send_thread.start()
-
-    # Run receiver in main thread
-    recv_handler(client_receiver_socket)
-
-    # Wait for thread to close before ending
-    send_thread.join()
+            # Ensure proper cleanup by waiting for the sender thread to finish before exiting.
+            send_thread.join()
 
 
 if __name__ == "__main__":
