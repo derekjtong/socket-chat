@@ -165,17 +165,17 @@ class ClientHandler:
         for client_socket in server.client_sockets:  
             if client_socket.getpeername()[0] == client_id:  
                 return client_socket  
-        return None
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
-server.bind((server_address, server_port))  
-server.listen(5)
-print(f"Server is listening on {server_address}:{server_port}")
-while True:  
-   client_socket, client_address = server.accept()  
-   print(f"Client {client_address} connected")  
-   client_id = client_address[0]  
-   client_thread = threading.Thread(target=handle_client, args=(client_socket, client_id))  
-   client_thread.start()
+            return None
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
+        server.bind((server_address, server_port))  
+        server.listen(5)
+        print(f"Server is listening on {server_address}:{server_port}")
+        while True:  
+            client_socket, client_address = server.accept()  
+            print(f"Client {client_address} connected")  
+            client_id = client_address[0]  
+            client_thread = threading.Thread(target=handle_client, args=(client_socket, client_id))  
+            client_thread.start()
 
 
 
