@@ -69,6 +69,8 @@ class ClientHandler:
                 else:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
+
+                        //
                     )
         self.conn_recv.close()
         self.conn_send.close()
@@ -143,6 +145,38 @@ class ClientHandler:
             return parts[1]
         else:
             return False
+        
+    def handle_client(client_socket, client_id):  
+        while True:  
+            try:  
+           # 接收客户端发送的消息  
+                message = client_socket.recv(1024)  
+                if not message:  
+                    break
+           # 将消息转发给目标客户端  
+                target_client_id = client_ids[client_id]  
+                target_client_socket = server.get_client_socket(target_client_id)  
+                target_client_socket.send(f"{client_id}:{message.decode('utf-8')}")
+            except Exception as e:  
+                print(f"Error handling client {client_id}: {e}")  
+                break
+        client_socket.close()
+    def get_client_socket(client_id):  
+        for client_socket in server.client_sockets:  
+            if client_socket.getpeername()[0] == client_id:  
+                return client_socket  
+        return None
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
+server.bind((server_address, server_port))  
+server.listen(5)
+print(f"Server is listening on {server_address}:{server_port}")
+while True:  
+   client_socket, client_address = server.accept()  
+   print(f"Client {client_address} connected")  
+   client_id = client_address[0]  
+   client_thread = threading.Thread(target=handle_client, args=(client_socket, client_id))  
+   client_thread.start()
+
 
 
 def main():
