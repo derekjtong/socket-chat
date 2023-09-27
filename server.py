@@ -147,7 +147,7 @@ class ClientHandler:
             return False
         
     def handle_client(client_socket, client_id):  
-        while True:  
+        while True:  # Test
             try:  
            # 接收客户端发送的消息  
                 message = client_socket.recv(1024)  
