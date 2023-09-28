@@ -105,6 +105,7 @@ class ClientHandler:
 
     def cmd_history(self, command):
         self.send(f"History with {self.target_id}")
+        # TODO
 
     def cmd_target(self, command):
         global connected_clients
