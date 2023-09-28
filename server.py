@@ -12,8 +12,11 @@ CMD_HELP = "/help"
 CMD_TARGET = "/target"
 
 # TODO: Instead of using global variable, create a Server class and pass the object to each thread.
-connected_clients = set()
+connected_clients = {}
 connected_clients_lock = threading.Lock()
+
+# key: uuid
+# value: conn_send
 
 
 class ClientHandler:
@@ -50,13 +53,13 @@ class ClientHandler:
             if not client_data:
                 print("Disconnected unexpectedly")
                 with connected_clients_lock:
-                    connected_clients.remove(self.client_uuid)
+                    del connected_clients[self.client_uuid]
                 break
             if client_data[0] == "/":
                 if self.handle_command(client_data) is False:
                     print(f"{self.thread_name}: Client {self.addr_recv} exited")
                     with connected_clients_lock:
-                        connected_clients.remove(self.client_uuid)
+                        del connected_clients[self.client_uuid]
                     break
             else:
                 print(
@@ -69,9 +72,8 @@ class ClientHandler:
                 else:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
-
-                        //
                     )
+                    self.handle_message(client_data)
         self.conn_recv.close()
         self.conn_send.close()
 
@@ -145,38 +147,13 @@ class ClientHandler:
             return parts[1]
         else:
             return False
-        
-    def handle_client(client_socket, client_id):  
-        while True:  # Test
-            try:  
-           # 接收客户端发送的消息  
-                message = client_socket.recv(1024)  
-                if not message:  
-                    break
-           # 将消息转发给目标客户端  
-                target_client_id = client_ids[client_id]  
-                target_client_socket = server.get_client_socket(target_client_id)  
-                target_client_socket.send(f"{client_id}:{message.decode('utf-8')}")
-            except Exception as e:  
-                print(f"Error handling client {client_id}: {e}")  
-                break
-        client_socket.close()
-    def get_client_socket(client_id):  
-        for client_socket in server.client_sockets:  
-            if client_socket.getpeername()[0] == client_id:  
-                return client_socket  
-            return None
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
-        server.bind((server_address, server_port))  
-        server.listen(5)
-        print(f"Server is listening on {server_address}:{server_port}")
-        while True:  
-            client_socket, client_address = server.accept()  
-            print(f"Client {client_address} connected")  
-            client_id = client_address[0]  
-            client_thread = threading.Thread(target=handle_client, args=(client_socket, client_id))  
-            client_thread.start()
 
+    def handle_message(self, client_data):
+        try:
+            target_connection = connected_clients[self.target_id]
+            target_connection.sendall(f"{self.client_uuid}: {client_data}".encode())
+        except Exception as e:
+            print(f"Error handling client {self.target_id}: {e}")
 
 
 def main():
@@ -204,7 +181,7 @@ def main():
         conn_send, addr_send = socket_out.accept()
 
         with connected_clients_lock:
-            connected_clients.add(client_uuid)
+            connected_clients[client_uuid] = conn_send
         client_handler = ClientHandler(
             conn_recv, addr_recv, conn_send, addr_send, client_uuid
         )
