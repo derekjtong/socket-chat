@@ -12,8 +12,11 @@ CMD_HELP = "/help"
 CMD_TARGET = "/target"
 
 # TODO: Instead of using global variable, create a Server class and pass the object to each thread.
-connected_clients = set()
+connected_clients = {}
 connected_clients_lock = threading.Lock()
+
+# key: uuid
+# value: conn_send
 
 
 class ClientHandler:
@@ -50,13 +53,13 @@ class ClientHandler:
             if not client_data:
                 print("Disconnected unexpectedly")
                 with connected_clients_lock:
-                    connected_clients.remove(self.client_uuid)
+                    del connected_clients[self.client_uuid]
                 break
             if client_data[0] == "/":
                 if self.handle_command(client_data) is False:
                     print(f"{self.thread_name}: Client {self.addr_recv} exited")
                     with connected_clients_lock:
-                        connected_clients.remove(self.client_uuid)
+                        del connected_clients[self.client_uuid]
                     break
             else:
                 print(
@@ -70,6 +73,7 @@ class ClientHandler:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
                     )
+                    self.handle_message(client_data)
         self.conn_recv.close()
         self.conn_send.close()
 
@@ -101,6 +105,7 @@ class ClientHandler:
 
     def cmd_history(self, command):
         self.send(f"History with {self.target_id}")
+        # TODO
 
     def cmd_target(self, command):
         global connected_clients
@@ -144,6 +149,13 @@ class ClientHandler:
         else:
             return False
 
+    def handle_message(self, client_data):
+        try:
+            target_connection = connected_clients[self.target_id]
+            target_connection.sendall(f"{self.client_uuid}: {client_data}".encode())
+        except Exception as e:
+            print(f"Error handling client {self.target_id}: {e}")
+
 
 def main():
     if len(sys.argv) != 3:
@@ -170,7 +182,7 @@ def main():
         conn_send, addr_send = socket_out.accept()
 
         with connected_clients_lock:
-            connected_clients.add(client_uuid)
+            connected_clients[client_uuid] = conn_send
         client_handler = ClientHandler(
             conn_recv, addr_recv, conn_send, addr_send, client_uuid
         )
