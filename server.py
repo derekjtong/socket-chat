@@ -73,7 +73,7 @@ class ClientHandler:
                     self.send(
                         f"{self.thread_name} Server: Sending message to {self.target_id}"
                     )
-                    self.handle_message(client_data)
+                    self.send_to_target(client_data)
         self.conn_recv.close()
         self.conn_send.close()
 
@@ -149,7 +149,7 @@ class ClientHandler:
         else:
             return False
 
-    def handle_message(self, client_data):
+    def send_to_target(self, client_data):
         try:
             target_connection = connected_clients[self.target_id]
             target_connection.sendall(f"{self.client_uuid}: {client_data}".encode())
