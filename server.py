@@ -11,12 +11,13 @@ CMD_USERNAME = "/username"
 CMD_HELP = "/help"
 CMD_TARGET = "/target"
 
-# TODO: Instead of using global variable, create a Server class and pass the object to each thread.
+# Schema of connected_clients
+# key: uuid
+# value: socket
 connected_clients = {}
 connected_clients_lock = threading.Lock()
-
-# key: uuid
-# value: conn_send
+connected_client_name = {}
+connected_client_name_lock = threading.Lock()
 
 
 class ClientHandler:
@@ -90,11 +91,17 @@ class ClientHandler:
     def cmd_username(self, command):
         self.client_name = self.get_args(command)
         self.send(f"{self.thread_name} Server: Hello {self.client_name}")
+        global connected_client_name
+        with connected_client_name_lock:
+            connected_client_name[self.client_uuid] = self.client_name
 
     def cmd_list(self, command):
         values = "\nActive Clients:\n"
         for value in connected_clients:
+            with connected_client_name_lock:
+                name = connected_client_name[value]
             values += str(value)
+            values += f" {name}"
             if value == self.client_uuid:
                 values += " (self)"
             values += "\n"
@@ -180,6 +187,7 @@ def main():
         socket_out.listen()
         conn_recv.sendall(str(socket_out.getsockname()[1]).encode())
         conn_send, addr_send = socket_out.accept()
+        print(conn_send)
 
         with connected_clients_lock:
             connected_clients[client_uuid] = conn_send
