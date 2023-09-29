@@ -8,7 +8,7 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
    server sends back this ID to the client.
 2. The server can accept several different commands:
    - [x] **list**: The server sends back all the active client IDs.
-   - [ ] **Forward ID string**: The server should be able to understand that this client wants to send
+   - [x] **Forward ID string**: The server should be able to understand that this client wants to send
          the msg(string) to the other client with the ID that listed the command. The server should
          be able to forward the message to the target in the following format: source ID:
          message_content
