@@ -24,8 +24,9 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
 2. Start client:
    `python3 client.py <host> <port>`
 
-## Commands
+ Host and port are optional, will default to 127.0.0.1:65432
 
+## Commands
         /help       - Display this help message.
 
         /username   - Set your username. Usage: /username <your_name>
