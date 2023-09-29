@@ -26,6 +26,12 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
 
  Host and port are optional, will default to 127.0.0.1:65432
 
+ Example workflow
+
+ 1. /list to get list of connected clients' UUIDs.
+ 2. /target <uuid> to target a client.
+ 3. <message> to send message to the targetted client.
+
 ## Commands
         /help       - Display this help message.
 
