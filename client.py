@@ -78,15 +78,10 @@ def main():
     Entry point for the client program. Initializes sockets, prompts user for
     a username, sets up threads for handling sending and receiving messages.
     """
-
-    # Validate the number of command-line arguments.
-    if len(sys.argv) != 3:
-        # print(f"Usage: {sys.argv[0]} <host> <port>")
-        # sys.exit(1)
-        host, port = DEFAULT_CONNECTION
-    else:
-        # Extract host and port from command-line arguments.
+    if len(sys.argv) == 3:
         host, port = sys.argv[1], int(sys.argv[2])
+    else:
+        host, port = DEFAULT_CONNECTION
 
     # Initialize and connect the sender socket.
     with socket.socket(*SOCKET_SETUP) as client_sender_socket:
