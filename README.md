@@ -2,7 +2,7 @@
 
 A TCP-based chat server-client model supporting multiple users, unique IDs, and various chat commands.
 
-## Features
+<!-- ## Features
 
 1. The server can accept multiple clients and assign each of them a unique ID. When connected, the
    server sends back this ID to the client.
@@ -14,7 +14,7 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
          message_content
    - [x] **history ID**: The server should send back the chatting history between the requested client
          and the client with the ID listed in the command.
-   - [x] **exit**: The server should send back a message "Goodbye" and close the connection.
+   - [x] **exit**: The server should send back a message "Goodbye" and close the connection. -->
 
 ## Usage
 
