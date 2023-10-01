@@ -45,12 +45,11 @@ def recv_handler(client_receiver_socket):
         # Server closed the connection.
         if not server_reply:
             break
-
         print(server_reply)
 
         # DISABLED DUE TO BUGGINESS
         # Set the event to signal that a message has been received and printed.
-        # message_received_event.set()
+        # message_received_event.set
 
 
 def main():

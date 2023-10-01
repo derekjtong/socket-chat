@@ -143,7 +143,7 @@ class ClientHandler:
             )
             return
 
-        if self.target_id == self.client_uuid:
+        if temp_target_id == self.client_uuid:
             self.send_to_client(f"Error: cannot target self")
             return
         if self.server_state.get_client(temp_target_id):
