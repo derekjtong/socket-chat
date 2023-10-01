@@ -1,5 +1,5 @@
 import threading
-
+from datetime import datetime
 
 class ServerState:
     def __init__(self):
@@ -7,7 +7,10 @@ class ServerState:
         self._connected_clients_lock = threading.Lock()
         self._connected_client_name = {}
         self._connected_client_name_lock = threading.Lock()
+        self._message_history = dict(list)
+        self._message_history_lock = threading.Lock()
 
+    
     def add_client(self, client_uuid, conn_send):
         with self._connected_clients_lock:
             self._connected_clients[client_uuid] = conn_send
@@ -35,3 +38,14 @@ class ServerState:
                 (uuid, self._connected_client_name.get(uuid))
                 for uuid in self._connected_clients
             ]
+
+    def save_message(self, uuid1, uuid2, msg):
+        with self._message_history_lock:
+            uuidkey = uuid1 + uuid2 if uuid1 < uuid2 else uuid2 + uuid1
+            current_time = datetime.now().strftime("%H:%M:%S")
+            self._message_history[uuidkey].append(f"${current_time} ${msg}")
+
+    def get_messages(self, uuid1, uuid2):
+        with self._message_history_lock:
+            uuidkey = uuid1 + uuid2 if uuid1 < uuid2 else uuid2 + uuid1
+            return list(self._message_history[uuidkey])
