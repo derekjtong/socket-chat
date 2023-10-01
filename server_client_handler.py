@@ -24,6 +24,7 @@ class ClientHandler:
         self.client_name = ""
         self.thread_name = f"[{threading.get_native_id()}]"
         self.target_id = -1
+        self.exit_event = threading.Event()
 
         self.command_handlers = {
             CMD_USERNAME: self.cmd_username,
@@ -43,25 +44,37 @@ class ClientHandler:
         while True:
             client_data = self.conn_recv.recv(MESSAGE_BUFFER_SIZE).decode()
             if not client_data:
+                # Client disconnected
                 print(
                     f"{self.thread_name} Client {self.ip_name} disconnected unexpectedly"
                 )
                 self.server_state.remove_client(self.client_uuid)
                 break
             if client_data[0] == "/":
+                # Is command
                 if self.handle_command(client_data) is False:
                     # Exited
                     break
             else:
+                # Is not command, send message
                 print(
                     f"{self.thread_name} Client {self.ip_name} sent message: {client_data}"
                 )
                 if self.target_id == -1:
+                    # No target selected
                     self.send_to_client(
                         f"No target selected. Select with /target <target_uuid>"
                     )
+                elif self.server_state.get_client(self.target_id) == None:
+                    # Previously selected target disconnected
+                    self.send_to_client(
+                        f"Target exited. Select new with /target <target_uuid>"
+                    )
                 else:
-                    self.send_to_client(f"Sending message to {self.target_id}")
+                    # Send message to target
+                    self.send_to_client("Sent")
+                    # self.send_to_client(f"Sending message to {self.target_id}")
+                    self.save_messages(client_data)
                     self.send_to_target(client_data)
         self.conn_recv.close()
         self.conn_send.close()
@@ -75,6 +88,9 @@ class ClientHandler:
 
         # Default handler for unrecognized commands
         self.send_to_client(f"Unrecognized command {command}")
+
+    def save_messages(self, client_data):
+        self.server_state.save_message(self.client_uuid, self.target_id, client_data)
 
     def cmd_username(self, command):
         self.client_name = self.get_args(command)
@@ -90,18 +106,20 @@ class ClientHandler:
             values += "\n"
         self.send_to_client(values)
 
-    def cmd_exit(self, command):
-        print(f"{self.thread_name} Client {self.ip_name} exited")
-        self.send_to_client("Goodbye")
-        self.server_state.remove_client(self.client_uuid)
-        return False
-
     def cmd_history(self, command):
-        self.send_to_client(f"History with {self.target_id}")
-        # TODO
+        history = self.server_state.get_messages(self.client_uuid, self.target_id)
+        message = f"History with {self.target_id}\n"
+        if not history:
+            message += "No messages."
+        else:
+            for item in history:
+                message += item + "\n"
+        self.send_to_client(message)
 
     def cmd_target(self, command):
         args = self.get_args(command)
+
+        # /target
         if not args:
             if self.target_id == -1:
                 self.send_to_client(
@@ -111,12 +129,17 @@ class ClientHandler:
                 self.send_to_client(f"Current target: {self.target_id}")
             return
 
-        temp_target_id = ""
+        # /target -1 (DISCONNECTED)
+        if args == -1:
+            self.target_id = -1
+            return
+
+        # /target <UUID>)
         try:
             temp_target_id = uuid.UUID(args)
         except ValueError:
             self.send_to_client(
-                f"Error: target not found. To see connected clients, try /list"
+                f"Error: invalid UUID. To see connected clients, try /list"
             )
             return
 
@@ -150,9 +173,23 @@ class ClientHandler:
         else:
             return False
 
+    def cmd_exit(self, command):
+        print(f"{self.thread_name} Client {self.ip_name} exited")
+        self.send_to_client("Goodbye")
+        if (
+            self.target_id != -1
+            and self.server_state.get_client(self.target_id) != None
+        ):
+            # Notify target of exit if they are still active
+            self.server_state.get_client(self.target_id).sendall(
+                f"[SERVER]: {self.client_uuid} exited".encode()
+            )
+        self.server_state.remove_client(self.client_uuid)
+        return False
+
     def send_to_target(self, client_data):
-        try:
-            target_connection = self.server_state.get_client(self.target_id)
-            target_connection.sendall(f"\n{self.client_uuid}: {client_data}".encode())
-        except Exception as e:
-            print(f"Error handling client {self.target_id}: {e}")
+        target_connection = self.server_state.get_client(self.target_id)
+        if target_connection == None:
+            print(f"{self.thread_name} Send error")
+            return
+        target_connection.sendall(f"\n{self.client_name}: {client_data}".encode())

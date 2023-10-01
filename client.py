@@ -8,8 +8,9 @@ MESSAGE_BUFFER_SIZE = config.MESSAGE_BUFFER_SIZE
 SOCKET_SETUP = config.SOCKET_SETUP
 DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
 
+# DISABLED DUE TO BUGGINESS
 # Event to synchronize receiving of messages before prompting for the next input.
-message_received_event = threading.Event()
+# message_received_event = threading.Event()
 
 
 def send_handler(client_sender_socket):
@@ -17,18 +18,17 @@ def send_handler(client_sender_socket):
     Continuously prompt the user for input and send messages to the server.
     """
     while True:
+        # DISABLED DUE TO BUGGINESS
         # Wait for the message_received_event before prompting the user for input,
         # to ensure proper synchronization with recv_handler.
-        message_received_event.wait()
-        message_received_event.clear()
-
-        print("Your message: ", end="", flush=True)
+        # message_received_event.wait()
+        # message_received_event.clear()
+        # print("Your message: ", end="", flush=True)
         message = input().strip()
 
-        # Send the user's message to the server.
         client_sender_socket.sendall(message.encode())
 
-        # If the user enters "exit", log the exit message, set the user_exited_event,
+        # If the user enters "exit", wait for server to say "Goodbye",
         # and break the loop to end the conversation.
         if message == "/exit":
             print(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
@@ -40,18 +40,16 @@ def recv_handler(client_receiver_socket):
     Continuously receive and print messages from the server.
     """
     while True:
-        # Receive messages from the server and decode them.
         server_reply = client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode()
 
-        # Break the loop and exit the thread if the server closed the connection.
+        # Server closed the connection.
         if not server_reply:
             break
-        # Print received messages to the console.
         print(server_reply)
 
+        # DISABLED DUE TO BUGGINESS
         # Set the event to signal that a message has been received and printed.
-        message_received_event.set()
-    print("ending")
+        # message_received_event.set
 
 
 def main():
@@ -64,12 +62,11 @@ def main():
     else:
         host, port = DEFAULT_CONNECTION
 
-    # Initialize and connect the sender socket.
     with socket.socket(*SOCKET_SETUP) as client_sender_socket:
         client_sender_socket.connect((host, port))
 
-        # Initialize the receiver socket and connect it to the port assigned by the server.
         with socket.socket(*SOCKET_SETUP) as client_receiver_socket:
+            # Use port assigned by server
             receiver_port = int(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
             client_receiver_socket.connect((host, int(receiver_port)))
 
@@ -80,21 +77,23 @@ def main():
                     break
             client_sender_socket.sendall(f"/username {name}".encode())
 
-            # Print the server replies, including the assigned UUID and greeting message.
+            # Server: your UUID is
             print(client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode())
+            # Server: hello {name}
             print(client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode())
 
+            # DISABLED DUE TO BUGGINESS
             # Set up and start the sender thread.
-            message_received_event.set()
+            # message_received_event.set()
             send_thread = threading.Thread(
                 target=send_handler, args=(client_sender_socket,)
             )
             send_thread.start()
 
-            # Use the main thread as the receiver thread.
+            # Use current thread as the receiver thread.
             recv_handler(client_receiver_socket)
 
-            # Ensure proper cleanup by waiting for the sender thread to finish before exiting.
+            # Waiting for the sender thread to finish before exiting.
             send_thread.join()
 
 
