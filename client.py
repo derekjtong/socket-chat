@@ -21,6 +21,7 @@ def send_handler(client_sender_socket):
     Continuously prompt the user for input and send messages to the server.
     """
 
+    # TODO: Remove shutdown_event, just ask user to input any key to continue.
     while not shutdown_event.is_set():
         # DISABLED DUE TO BUGGINESS
         # Wait for the message_received_event before prompting the user for input,
@@ -66,7 +67,7 @@ def recv_handler(client_receiver_socket):
             server_reply
             == "[SERVER] Server is shutting down. Connection will be closed."
         ):
-            print("shutting down recv_handler")
+            print("[CLIENT] Shutting down recv_handler\nPress enter to continue...")
             shutdown_event.set()
             break
         # DISABLED DUE TO BUGGINESS
@@ -108,7 +109,7 @@ def main():
             # Set up and start the sender thread.
             # message_received_event.set()
             send_thread = threading.Thread(
-                target=send_handler, args=(client_sender_socket,)
+                target=send_handler, args=(client_sender_socket,), daemon=True
             )
             send_thread.start()
 
