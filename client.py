@@ -11,11 +11,6 @@ DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
 # Event to synchronize receiving of messages before prompting for the next input.
 message_received_event = threading.Event()
 
-# Event to signal when the user has chosen to exit, used to gracefully exit the receive handler.
-user_exited_event = threading.Event()
-
-message_queue = queue.Queue()
-
 
 def send_handler(client_sender_socket):
     """
@@ -30,20 +25,13 @@ def send_handler(client_sender_socket):
         print("Your message: ", end="", flush=True)
         message = input().strip()
 
-        # If the user doesn't enter a message, set the message_received_event
-        # and continue to the next iteration as there will be no server reply for an empty message.
-        while not message:
-            server_reply = message_queue.get()
-            print(f"Server says: {server_reply}", flush=True)
-
         # Send the user's message to the server.
         client_sender_socket.sendall(message.encode())
 
         # If the user enters "exit", log the exit message, set the user_exited_event,
         # and break the loop to end the conversation.
         if message == "/exit":
-            print("Exiting...")
-            user_exited_event.set()
+            print(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
             break
 
 
@@ -52,25 +40,18 @@ def recv_handler(client_receiver_socket):
     Continuously receive and print messages from the server.
     """
     while True:
-        # Exit the thread gracefully if user has exited.
-        if user_exited_event.is_set():
-            break
-
         # Receive messages from the server and decode them.
         server_reply = client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode()
 
         # Break the loop and exit the thread if the server closed the connection.
         if not server_reply:
             break
-
         # Print received messages to the console.
-        # print(server_reply, flush=True)
-
-        message_queue.put(server_reply)
         print(server_reply)
 
         # Set the event to signal that a message has been received and printed.
         message_received_event.set()
+    print("ending")
 
 
 def main():

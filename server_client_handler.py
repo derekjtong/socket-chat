@@ -57,7 +57,9 @@ class ClientHandler:
                     f"{self.thread_name} Client {self.ip_name} sent message: {client_data}"
                 )
                 if self.target_id == -1:
-                    self.send_to_client(f"No target selected. Select with /target <target_uuid>")
+                    self.send_to_client(
+                        f"No target selected. Select with /target <target_uuid>"
+                    )
                 else:
                     self.send_to_client(f"Sending message to {self.target_id}")
                     self.send_to_target(client_data)
@@ -90,6 +92,7 @@ class ClientHandler:
 
     def cmd_exit(self, command):
         print(f"{self.thread_name} Client {self.ip_name} exited")
+        self.send_to_client("Goodbye")
         self.server_state.remove_client(self.client_uuid)
         return False
 
@@ -101,25 +104,32 @@ class ClientHandler:
         args = self.get_args(command)
         if not args:
             if self.target_id == -1:
-                self.send_to_client(f"No target selected. Select with /target <target_uuid>")
+                self.send_to_client(
+                    f"No target selected. Select with /target <target_uuid>"
+                )
             else:
                 self.send_to_client(f"Current target: {self.target_id}")
             return
 
+        temp_target_id = ""
         try:
             temp_target_id = uuid.UUID(args)
         except ValueError:
-            self.send_to_client(f"Error: target not found. To see connected clients, try /list")
+            self.send_to_client(
+                f"Error: target not found. To see connected clients, try /list"
+            )
             return
 
-        if self.target_id == self.client_uuid:
+        if temp_target_id == self.client_uuid:
             self.send_to_client(f"Error: cannot target self")
             return
         if self.server_state.get_client(temp_target_id):
             self.target_id = temp_target_id
             self.send_to_client(f"Connected to {self.target_id}")
         else:
-            self.send_to_client(f"Error: target not found. To see connected clients, try /list")
+            self.send_to_client(
+                f"Error: target not found. To see connected clients, try /list"
+            )
 
     def cmd_help(self, command):
         help_message = """
