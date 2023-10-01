@@ -95,16 +95,21 @@ class ClientHandler:
 
     def cmd_history(self, command):
         self.send_to_client(f"History with {self.target_id}")
-         target_id = client_id  
-       message = request.recv(1024).decode()  
-       if not message:  
-           return  
-       source_id = message.split()[0]  
-       if source_id in clients:  
+        target_id = client_id  
+        message = get_messages 
+        if not message:  
+            return  
+        source_id = message.split()[0]  
+        if source_id in clients:  
            history = clients[source_id].get_history(target_id)  
            if history:  
                message = f'History for {source_id} and {target_id}: \n{history}\n'  
-               request.sendall(message.encode())
+               request.sendall(message.encode()) 
+        if target_id in clients:  
+           history = clients[target_id].get_history(source_id)  
+           if history:  
+               message = f'History for {target_id} and {source_id}: \n{history}\n'  
+               request.sendall(message.encode()) 
 
     def cmd_target(self, command):
         args = self.get_args(command)
