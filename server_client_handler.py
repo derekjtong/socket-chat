@@ -1,6 +1,8 @@
 import config
 import uuid
 import threading
+import socket
+import time
 
 MESSAGE_BUFFER_SIZE = config.MESSAGE_BUFFER_SIZE
 
@@ -41,8 +43,19 @@ class ClientHandler:
     def run(self):
         print(f"{self.thread_name} Accepting connection from {self.ip_name}")
         self.send_to_client(f"Your UUID is {self.client_uuid}")
+
+        # Periodically check if server closed
+        self.conn_recv.settimeout(1.0)
         while True:
-            client_data = self.conn_recv.recv(MESSAGE_BUFFER_SIZE).decode()
+            if self.server_state.is_shutdown():
+                self.send_to_client(
+                    "Server is shutting down. Connection will be closed."
+                )
+                break
+            try:
+                client_data = self.conn_recv.recv(MESSAGE_BUFFER_SIZE).decode()
+            except socket.timeout:
+                continue
             if not client_data:
                 # Client disconnected
                 print(

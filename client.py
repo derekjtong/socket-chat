@@ -4,6 +4,7 @@ import threading
 import config
 import queue
 
+# Edit in config file, server.py and client.py uses same settings
 MESSAGE_BUFFER_SIZE = config.MESSAGE_BUFFER_SIZE
 SOCKET_SETUP = config.SOCKET_SETUP
 DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
@@ -12,12 +13,15 @@ DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
 # Event to synchronize receiving of messages before prompting for the next input.
 # message_received_event = threading.Event()
 
+shutdown_event = threading.Event()
+
 
 def send_handler(client_sender_socket):
     """
     Continuously prompt the user for input and send messages to the server.
     """
-    while True:
+
+    while not shutdown_event.is_set():
         # DISABLED DUE TO BUGGINESS
         # Wait for the message_received_event before prompting the user for input,
         # to ensure proper synchronization with recv_handler.
@@ -26,13 +30,22 @@ def send_handler(client_sender_socket):
         # print("Your message: ", end="", flush=True)
         message = input().strip()
 
-        client_sender_socket.sendall(message.encode())
+        try:
+            client_sender_socket.sendall(message.encode())
+        except BrokenPipeError:
+            print("Connection to server lost.")
+            break
 
         # If the user enters "exit", wait for server to say "Goodbye",
         # and break the loop to end the conversation.
         if message == "/exit":
-            print(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
-            break
+            client_sender_socket.settimeout(5.0)
+            try:
+                print(client_sender_socket.recv(MESSAGE_BUFFER_SIZE).decode())
+            except socket.timeout:
+                print("No goodbye from the server :(, exiting...")
+            finally:
+                break
 
 
 def recv_handler(client_receiver_socket):
@@ -43,10 +56,19 @@ def recv_handler(client_receiver_socket):
         server_reply = client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode()
 
         # Server closed the connection.
+
         if not server_reply:
+            print("Connection to server lost.")
+            shutdown_event.set()
             break
         print(server_reply)
-
+        if (
+            server_reply
+            == "[SERVER] Server is shutting down. Connection will be closed."
+        ):
+            print("shutting down recv_handler")
+            shutdown_event.set()
+            break
         # DISABLED DUE TO BUGGINESS
         # Set the event to signal that a message has been received and printed.
         # message_received_event.set
