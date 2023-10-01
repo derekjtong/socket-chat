@@ -43,6 +43,7 @@ def main():
         # Add to list of connected clients
         server_state.add_client(client_uuid, conn_send)
 
+        # Thread started to handle client, server continues listening
         client_handler = ClientHandler(
             conn_recv, addr_recv, conn_send, client_uuid, server_state
         )
