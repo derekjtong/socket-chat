@@ -14,6 +14,17 @@ class ServerState:
         self._message_history = defaultdict(list)
         self._message_history_lock = threading.Lock()
 
+        self._shutdown_flag = False
+        self._shutdown_flag_lock = threading.Lock()
+
+    def set_shutdown(self):
+        with self._shutdown_flag_lock:
+            self._shutdown_flag = True
+
+    def is_shutdown(self):
+        with self._shutdown_flag_lock:
+            return self._shutdown_flag
+
     def add_client(self, client_uuid, conn_send):
         with self._connected_clients_lock:
             self._connected_clients[client_uuid] = conn_send
@@ -49,7 +60,7 @@ class ServerState:
         current_time = datetime.now().strftime("%H:%M:%S")
         with self._message_history_lock:
             self._message_history[uuidkey].append(
-                f"{current_time} {str(client)}: {msg}"
+                f"{current_time} {str(client)} {self.get_client_name(client)}: {msg}"
             )
 
     def get_messages(self, client, target):
