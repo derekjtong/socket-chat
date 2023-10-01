@@ -2,7 +2,6 @@ import sys
 import socket
 import threading
 import config
-import queue
 
 # Edit in config file, server.py and client.py uses same settings
 MESSAGE_BUFFER_SIZE = config.MESSAGE_BUFFER_SIZE
