@@ -12,7 +12,7 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
          the msg(string) to the other client with the ID that listed the command. The server should
          be able to forward the message to the target in the following format: source ID:
          message_content
-   - [ ] **history ID**: The server should send back the chatting history between the requested client
+   - [x] **history ID**: The server should send back the chatting history between the requested client
          and the client with the ID listed in the command.
    - [x] **exit**: The server should send back a message "Goodbye" and close the connection.
 
