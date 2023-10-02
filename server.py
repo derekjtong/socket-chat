@@ -51,7 +51,8 @@ def main():
                 conn_recv, addr_recv = socket_in.accept()
             except socket.timeout:
                 continue
-            # conn_recv, addr_recv = socket_in.accept()
+
+            # Generate UUID for client
             client_uuid = uuid.uuid4()
 
             # Set up server->client socket
