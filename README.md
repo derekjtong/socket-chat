@@ -26,11 +26,12 @@ A TCP-based chat server-client model supporting multiple users, unique IDs, and 
 
  Note: host and port are optional, will default to `127.0.0.1:65432`. In case that port is occupied, change in `config.py` to reconfigure server and client simultaneously.
 
- Example workflow
+### Chat with another client
 
  1. Type `/list` to get list of connected clients' UUIDs.
  2. tyep `/target <uuid>` to target a client.
- 3. Type your `<message>` to send message to the targetted client.
+ 3. Type your `<message>` and press enter.
+ 4. Server will send your message to target.
 
 ## Commands
         /help       - Display this help message.
