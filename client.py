@@ -66,7 +66,7 @@ def recv_handler(client_receiver_socket):
             server_reply
             == "[SERVER] Server is shutting down. Connection will be closed."
         ):
-            print("[CLIENT] Shutting down. Press enter to continue...")
+            print("[CLIENT] Client is shutting down. Press enter to continue...")
             shutdown_event.set()
             break
         # DISABLED DUE TO BUGGINESS
