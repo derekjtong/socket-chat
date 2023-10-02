@@ -3,7 +3,6 @@ import socket
 import threading
 import uuid
 import config
-import time
 
 from server_state import ServerState
 from server_client_handler import ClientHandler
@@ -14,7 +13,7 @@ SOCKET_SETUP = config.SOCKET_SETUP
 DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
 
 
-def server_input_listener(server_state):
+def server_exit_listener(server_state):
     while True:
         user_input = input("Type 'exit' to shutdown the server:\n")
         if user_input.strip().lower() == "exit":
@@ -40,7 +39,7 @@ def main():
 
     server_state = ServerState()
 
-    input_thread = threading.Thread(target=server_input_listener, args=(server_state,))
+    input_thread = threading.Thread(target=server_exit_listener, args=(server_state,))
     input_thread.start()
 
     client_threads = []
