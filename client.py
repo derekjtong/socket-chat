@@ -8,10 +8,6 @@ MESSAGE_BUFFER_SIZE = config.MESSAGE_BUFFER_SIZE
 SOCKET_SETUP = config.SOCKET_SETUP
 DEFAULT_CONNECTION = config.DEFAULT_CONNECTION
 
-# DISABLED DUE TO BUGGINESS
-# Event to synchronize receiving of messages before prompting for the next input.
-# message_received_event = threading.Event()
-
 shutdown_event = threading.Event()
 
 
@@ -19,22 +15,9 @@ def send_handler(client_sender_socket):
     """
     Continuously prompt the user for input and send messages to the server.
     """
-
-    # TODO: Remove shutdown_event, just ask user to input any key to continue.
     while not shutdown_event.is_set():
-        # DISABLED DUE TO BUGGINESS
-        # Wait for the message_received_event before prompting the user for input,
-        # to ensure proper synchronization with recv_handler.
-        # message_received_event.wait()
-        # message_received_event.clear()
-        # print("Your message: ", end="", flush=True)
         message = input().strip()
-
-        try:
-            client_sender_socket.sendall(message.encode())
-        except BrokenPipeError:
-            print("Connection to server lost.")
-            break
+        client_sender_socket.sendall(message.encode())
 
         # If the user enters "exit", wait for server to say "Goodbye",
         # and break the loop to end the conversation.
@@ -56,11 +39,11 @@ def recv_handler(client_receiver_socket):
         server_reply = client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode()
 
         # Server closed the connection.
-
         if not server_reply:
-            print("Connection to server lost.")
+            print("Connection to server lost. Press any key to continue...")
             shutdown_event.set()
             break
+
         print(server_reply)
         if (
             server_reply
@@ -69,15 +52,12 @@ def recv_handler(client_receiver_socket):
             print("[CLIENT] Client is shutting down. Press enter to continue...")
             shutdown_event.set()
             break
-        # DISABLED DUE TO BUGGINESS
-        # Set the event to signal that a message has been received and printed.
-        # message_received_event.set
 
 
 def main():
     """
-    Entry point for the client program. Initializes sockets, prompts user for
-    a username, sets up threads for handling sending and receiving messages.
+    Initializes sockets, prompts user for a username, sets up 
+    threads for handling sending and receiving messages.
     """
     if len(sys.argv) == 3:
         host, port = sys.argv[1], int(sys.argv[2])
@@ -104,9 +84,6 @@ def main():
             # Server: hello {name}
             print(client_receiver_socket.recv(MESSAGE_BUFFER_SIZE).decode())
 
-            # DISABLED DUE TO BUGGINESS
-            # Set up and start the sender thread.
-            # message_received_event.set()
             send_thread = threading.Thread(
                 target=send_handler, args=(client_sender_socket,), daemon=True
             )
