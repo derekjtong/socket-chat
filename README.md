@@ -21,7 +21,6 @@ Note: host and port can be changed for both in `config.py`, or as program argume
 1.  Get `/list` of connected clients' UUIDs.
 2.  Target client with `/target <uuid>`.
 3.  Type your `<message>` and press enter.
-4.  The server will send your message to the target.
 
 ### View history with another client
 
