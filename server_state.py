@@ -60,7 +60,7 @@ class ServerState:
         current_time = datetime.now().strftime("%H:%M:%S")
         with self._message_history_lock:
             self._message_history[uuidkey].append(
-                f"{current_time} {str(client)} {self.get_client_name(client)}: {msg}"
+                f"{current_time} {self.get_client_name(client)}: {msg}"
             )
 
     def get_messages(self, client, target):

@@ -121,12 +121,12 @@ class ClientHandler:
 
     def cmd_history(self, command):
         history = self.server_state.get_messages(self.client_uuid, self.target_id)
-        message = f"History with {self.target_id}\n"
+        message = f"History with {self.server_state.get_client_name(self.target_id)} {self.target_id}\n"
         if not history:
             message += "No messages."
         else:
             for item in history:
-                message += item + "\n"
+                message += "    " + item + "\n"
         self.send_to_client(message)
 
     def cmd_target(self, command):
