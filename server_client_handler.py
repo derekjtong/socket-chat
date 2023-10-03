@@ -205,4 +205,4 @@ class ClientHandler:
         if target_connection == None:
             print(f"{self.thread_name} Send error")
             return
-        target_connection.sendall(f"\n{self.client_name}: {client_data}".encode())
+        target_connection.sendall(f"{self.client_name}: {client_data}".encode())
