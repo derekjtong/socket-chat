@@ -37,11 +37,18 @@ def main():
 
     print(f"[SERVER] Started listening on [{host}:{port}], awaiting clients...")
 
+    # Object to store variables threads will need such as
+    #     - connected clients
+    #     - connected client names
+    #     - message history
+    #     - shutdown flag
     server_state = ServerState()
 
+    # Server thread to listen to "exit"
     input_thread = threading.Thread(target=server_exit_listener, args=(server_state,))
     input_thread.start()
 
+    # Keep track of client threads for graceful exit
     client_threads = []
     socket_in.settimeout(1)
 
