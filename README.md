@@ -1,47 +1,53 @@
 # Socket Chat
 
-A TCP-based chat server-client model supporting multiple users, unique IDs, and various chat commands.
-
-<!-- ## Features
-
-1. The server can accept multiple clients and assign each of them a unique ID. When connected, the
-   server sends back this ID to the client.
-2. The server can accept several different commands:
-   - [x] **list**: The server sends back all the active client IDs.
-   - [x] **Forward ID string**: The server should be able to understand that this client wants to send
-         the msg(string) to the other client with the ID that listed the command. The server should
-         be able to forward the message to the target in the following format: source ID:
-         message_content
-   - [x] **history ID**: The server should send back the chatting history between the requested client
-         and the client with the ID listed in the command.
-   - [x] **exit**: The server should send back a message "Goodbye" and close the connection. -->
+This application consists of a chat server and client, where multiple clients can communicate with each other through the server using TCP sockets. The communication protocol and logic are handled using Python's socket and threading libraries, providing the ability to handle multiple clients concurrently. The server assigns a unique UUID to each client upon connecting. Clients can use commands to list all connected clients, target a specific client by UUID, view message history, change their username, or exit the chat.
 
 ## Usage
 
 1. Start server:
-   `python3 server.py <host> <port>`
+   `python3 server.py`
 
 2. Start client:
-   `python3 client.py <host> <port>`
+   `python3 client.py`
 
- Note: host and port are optional, will default to `127.0.0.1:65432`. In case that port is occupied, change in `config.py` to reconfigure server and client simultaneously.
+Note: host and port can be changed for both in `config.py`, or as program arguments `<host> <port>`
+
+### Get a list of connected users
+
+1. Type `/list`
 
 ### Chat with another client
 
- 1. Type `/list` to get list of connected clients' UUIDs.
- 2. tyep `/target <uuid>` to target a client.
- 3. Type your `<message>` and press enter.
- 4. Server will send your message to target.
+1.  Get `/list` of connected clients' UUIDs.
+2.  Target client with `/target <uuid>`.
+3.  Type your `<message>` and press enter.
+4.  The server will send your message to the target.
 
-## Commands
-        /help       - Display this help message.
+### View history with another client
 
-        /username   - Set your username. Usage: /username <your_name>
+1. Target client with `/target <uuid>`.
+2. Get `/history`
 
-        /list       - List all active client IDs.
+### Exit
 
-        /history    - View your message history with current target.
+1. `/exit`
 
-        /target     - Set your message target. Usage: /target <target_uuid>
+## All Commands
 
-        /exit       - Exit the client.
+Client
+
+- `/help` - Display this help message.
+
+- `/username <name>` - Set your username. Usage: /username <your_name>
+
+- `/list` - List all active client IDs.
+
+- `/history` - View your message history with your current target.
+
+- `/target <uuid>` - Set your target for messaging and history.
+
+- `/exit ` - Exit gracefully, alerting relevant users of departure.
+
+Server
+
+- `exit` - Shut down server gracefully, closing sockets and joining threads.
