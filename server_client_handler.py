@@ -64,12 +64,12 @@ class ClientHandler:
                 self.server_state.remove_client(self.client_uuid)
                 break
             if client_data[0] == "/":
-                # Is command
+                # client_data is a command
                 if self.handle_command(client_data) is False:
-                    # Exited
+                    # Command is /exit, exit
                     break
             else:
-                # Is not command, send message
+                # client_data is not a command, send message
                 print(
                     f"{self.thread_name} Client {self.ip_name} sent message: {client_data}"
                 )
